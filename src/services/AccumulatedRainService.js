@@ -1,7 +1,7 @@
 var axios = require('axios');
 
 const accumulatedRain = (jwt, device_id, dateFrom, dateTo) => new Promise((resolve, reject) => {
-  if (jwt == undefined || device_id == undefined || dateFrom == undefined) {
+  if (!(jwt && device_id && dateFrom)) {
     reject('required parameters: jwt, device_id, dateFrom');
   }
 
@@ -11,7 +11,7 @@ const accumulatedRain = (jwt, device_id, dateFrom, dateTo) => new Promise((resol
     }
   }
 
-  var dojot_url = process.env.DOJOT_HOST == undefined ? 'http://localhost:8000' : process.env.DOJOT_HOST;
+  var dojot_url = process.env.DOJOT_HOST || 'http://localhost:8000';
   dateFrom = '&dateFrom=' + dateFrom;
   dateTo = dateTo == undefined ? '' : '&dateTo=' + dateTo;
   var url = `${dojot_url}/history/device/${device_id}/history?attr=pcVol${dateFrom}${dateTo}`;
@@ -24,8 +24,7 @@ const accumulatedRain = (jwt, device_id, dateFrom, dateTo) => new Promise((resol
       resolve(rain);
     })
     .catch(function (error) {
-      console.log(error);
-      reject('an error occured');
+      reject(error.response.data);
     });
 });
 
