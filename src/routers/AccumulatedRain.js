@@ -4,7 +4,7 @@ const accumulatedRainService = require('../services/AccumulatedRainService');
 const router = Router();
 
 router.get('/rain', (req, res) => {
-  accumulatedRainService.accumulatedRain(req.query.jwt, req.query.device_id, req.query.dateFrom, req.query.dateTo)
+  accumulatedRainService.accumulatedRain(req.query.jwt, req.query.device_id, req.query.start_of_day, req.query.num_days)
     .then((data) => {
       let result = {
         accumulatedRain: data
