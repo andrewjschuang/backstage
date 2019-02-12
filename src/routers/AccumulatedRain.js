@@ -6,8 +6,8 @@ const router = Router();
 router.get('/rain', (req, res) => {
   let device_id = req.query.device_id;
   let beginning_hour = Number(req.query.beginning_hour);
-  let n_days_before_daily = Number(req.query.num_days);
-  let n_days_before_hourly = Number(req.query.num_days_before);
+  let n_days_before_daily = Number(req.query.n_days_before_daily);
+  let n_days_before_hourly = Number(req.query.n_days_before_hourly);
 
   let dojot_host = req.query.dojot_host;
   let jwt = req.query.authorization || req.query.Authorization || req.get('authorization');
