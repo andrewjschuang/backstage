@@ -16,11 +16,9 @@ const accumulatedRain = (jwt, device_id, start_of_day, num_days) => new Promise(
 
   var dateTo = new Date();
   var dateFrom = new Date();
-
+  dateFrom.setDate(dateFrom.getDate() - num_days);
   if (dateTo.getHours() >= start_of_day) {
-    dateFrom.setDate(dateFrom.getDate() - num_days + 1);
-  } else {
-    dateFrom.setDate(dateFrom.getDate() - num_days);
+    dateFrom.setDate(dateFrom.getDate() + 1);
   }
   dateFrom.setHours(start_of_day);
   dateFrom.setMinutes(0);
@@ -35,16 +33,19 @@ const accumulatedRain = (jwt, device_id, start_of_day, num_days) => new Promise(
   var dojot_url = process.env.DOJOT_HOST || 'http://localhost:8000';
   var url = `${dojot_url}/history/device/${device_id}/history?attr=pcVol&dateFrom=${dateFromString}&dateTo=${dateToString}`;
 
-  var hour = new Date(dateTo);
-  hour.setDate(hour.getDate());
-  hour.setHours(start_of_day);
-  hour.setMinutes(0);
-  hour.setSeconds(0);
-  hour.setMilliseconds(0);
+  var three_days_before = new Date();
+  three_days_before.setDate(three_days_before.getDate() - 3);
+  if (three_days_before.getHours() >= start_of_day) {
+    three_days_before.setDate(three_days_before.getDate() + 1);
+  }
+  three_days_before.setHours(start_of_day);
+  three_days_before.setMinutes(0);
+  three_days_before.setSeconds(0);
+  three_days_before.setMilliseconds(0);
 
   var result = {
     hours: [{
-      ts: new Date(hour),
+      ts: new Date(three_days_before),
       value: 0,
       value_acc: 0
     }],
@@ -56,9 +57,12 @@ const accumulatedRain = (jwt, device_id, start_of_day, num_days) => new Promise(
 
   var hours = dateTo.getHours();
   if (dateTo.getHours() < start_of_day) {
-    hours += 24;
+    hours += 72;
+  } else {
+    hours += 48;
   }
 
+  var hour = three_days_before;
   for (let i = hour.getHours() + 1; i <= hours; i++) {
     hour.setHours(i % 24);
     let next_day = Math.floor(i / 24);
