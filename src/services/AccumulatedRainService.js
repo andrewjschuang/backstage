@@ -94,35 +94,37 @@ const accumulatedRain = (dojot_host, jwt, device_id, beginning_hour, n_days_befo
       // console.log(`got ${JSON.stringify(response.data, null, 2)}`);
 
       for (let data of response.data) {
-        let ts = new Date(data['ts']);
+        let ts = new Date(data.ts);
+        var ts_unix = ts.setMinutes(0, 0, 0);
 
-        for (let i = 0; i < result.hours.length; i++) {
-          if (ts.getDate() == result.hours[i].ts.getDate() && ts.getHours() == result.hours[i].ts.getHours()) {
-            result.hours[i].value = Number(data['value']);
-            result.hours[i].value_acc = Number(data['value']);
+        for (let i = result.hours.length - 1; i >= 0; i--) {
+          if (ts_unix >= result.hours[i].ts.getTime() && ts_unix < result.hours[i].ts.getTime() + 3600000) {
+            result.hours[i].value += Number(data.value);
+            result.hours[i].value_acc += Number(data.value);
             break;
           }
         }
+      }
 
-        for (let i = result.days.length - 1; i >= 0; i--) {
-          if (ts > result.days[i].ts) {
-            result.days[i].value += Number(data['value']);
-            break;
-          }
+      for (let i = 0; i < result.days.length; i++) {
+        if (result.hours[0].ts.getDate() == result.days[i].ts.getDate()) {
+          result.days[i].value += result.hours[0].value;
+          break;
         }
-
-        hour.setHours(hour.getHours() + 1);
       }
 
       for (let i = 1; i < result.hours.length; i++) {
         result.hours[i].value_acc += result.hours[i - 1].value_acc;
+
+        for (let j = 0; j < result.days.length; j++) {
+          if (result.hours[i].ts.getDate() == result.days[j].ts.getDate()) {
+            result.days[j].value += result.hours[i].value;
+            break;
+          }
+        }
       }
 
-      for (let i = result.days.length - 1; i > 0; i--) {
-        result.days[i - 1].value += result.days[i].value;
-      }
-
-      // console.log(result);
+      console.log(result);
       return resolve(result);
     })
     .catch(function (error) {
