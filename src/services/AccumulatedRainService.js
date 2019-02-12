@@ -11,23 +11,17 @@ function initialize_date(date, beginning_hour, d, h, min, s, ms) {
   date.setMinutes(min);
   date.setSeconds(s);
   date.setMilliseconds(ms);
-  
+
   return date;
 }
 
-const accumulatedRain = (jwt, device_id, beginning_hour, n_days_before_daily, n_days_before_hourly) => new Promise((resolve, reject) => {
+const accumulatedRain = (dojot_host, jwt, device_id, beginning_hour, n_days_before_daily, n_days_before_hourly) => new Promise((resolve, reject) => {
   beginning_hour = beginning_hour || 7;
   n_days_before_daily = n_days_before_daily || 3;
   n_days_before_hourly = n_days_before_hourly || 3;
 
-  if (!(jwt && device_id)) {
-    reject('required parameters: jwt, device_id');
-  }
-
-  var headers = {
-    headers: {
-      Authorization: 'Bearer ' + jwt
-    }
+  if (!(device_id)) {
+    reject('required parameters: device_id');
   }
 
   var dateTo = new Date();
@@ -39,10 +33,6 @@ const accumulatedRain = (jwt, device_id, beginning_hour, n_days_before_daily, n_
 
   dateFromString = dateFrom.toISOString();
   dateToString = dateTo.toISOString();
-  console.log(`consulting history for device ${device_id}\n    from ${dateFromString} to ${dateToString}`);
-
-  var dojot_url = process.env.DOJOT_HOST || 'http://localhost:8000';
-  var url = `${dojot_url}/history/device/${device_id}/history?attr=pcVol&dateFrom=${dateFromString}&dateTo=${dateToString}`;
 
   var result = {
     hours: [{
@@ -84,7 +74,22 @@ const accumulatedRain = (jwt, device_id, beginning_hour, n_days_before_daily, n_
     });
   }
 
-  axios.get(url, headers)
+  console.log(`consulting history for device ${device_id}\n    from ${dateFromString} to ${dateToString}`);
+  var history;
+  if (dojot_host) {
+    history = dojot_host + '/history';
+  } else {
+    history = 'http://history:8000';
+  }
+  var url = `${history}/device/${device_id}/history?attr=pcVol&dateFrom=${dateFromString}&dateTo=${dateToString}`;
+
+  axios({
+    url,
+    method: "get",
+    headers: {
+      Authorization: jwt
+    }
+  })
     .then(function (response) {
       // console.log(`got ${JSON.stringify(response.data, null, 2)}`);
 
@@ -118,10 +123,10 @@ const accumulatedRain = (jwt, device_id, beginning_hour, n_days_before_daily, n_
       }
 
       // console.log(result);
-      resolve(result);
+      return resolve(result);
     })
     .catch(function (error) {
-      reject(error.response.data);
+      return reject(error);
     });
 });
 
