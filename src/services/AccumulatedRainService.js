@@ -1,8 +1,24 @@
 var axios = require('axios');
 
-const accumulatedRain = (jwt, device_id, start_of_day, num_days) => new Promise((resolve, reject) => {
-  start_of_day = start_of_day || 7;
-  num_days = num_days || 3;
+function initialize_date(date, beginning_hour, d, h, min, s, ms) {
+  date.setDate(d);
+
+  if (date.getHours() >= beginning_hour) {
+    date.setDate(date.getDate() + 1);
+  }
+
+  date.setHours(h);
+  date.setMinutes(min);
+  date.setSeconds(s);
+  date.setMilliseconds(ms);
+  
+  return date;
+}
+
+const accumulatedRain = (jwt, device_id, beginning_hour, n_days_before_daily, n_days_before_hourly) => new Promise((resolve, reject) => {
+  beginning_hour = beginning_hour || 7;
+  n_days_before_daily = n_days_before_daily || 3;
+  n_days_before_hourly = n_days_before_hourly || 3;
 
   if (!(jwt && device_id)) {
     reject('required parameters: jwt, device_id');
@@ -16,36 +32,21 @@ const accumulatedRain = (jwt, device_id, start_of_day, num_days) => new Promise(
 
   var dateTo = new Date();
   var dateFrom = new Date();
-  dateFrom.setDate(dateFrom.getDate() - num_days);
-  if (dateTo.getHours() >= start_of_day) {
-    dateFrom.setDate(dateFrom.getDate() + 1);
-  }
-  dateFrom.setHours(start_of_day);
-  dateFrom.setMinutes(0);
-  dateFrom.setSeconds(0);
-  dateFrom.setMilliseconds(0);
+  var days_before = new Date();
+
+  dateFrom = initialize_date(dateFrom, beginning_hour, dateFrom.getDate() - n_days_before_daily, beginning_hour, 0, 0, 0);
+  days_before = initialize_date(days_before, beginning_hour, days_before.getDate() - n_days_before_hourly, beginning_hour, 0, 0, 0);
 
   dateFromString = dateFrom.toISOString();
   dateToString = dateTo.toISOString();
-
   console.log(`consulting history for device ${device_id}\n    from ${dateFromString} to ${dateToString}`);
 
   var dojot_url = process.env.DOJOT_HOST || 'http://localhost:8000';
   var url = `${dojot_url}/history/device/${device_id}/history?attr=pcVol&dateFrom=${dateFromString}&dateTo=${dateToString}`;
 
-  var three_days_before = new Date();
-  three_days_before.setDate(three_days_before.getDate() - 3);
-  if (three_days_before.getHours() >= start_of_day) {
-    three_days_before.setDate(three_days_before.getDate() + 1);
-  }
-  three_days_before.setHours(start_of_day);
-  three_days_before.setMinutes(0);
-  three_days_before.setSeconds(0);
-  three_days_before.setMilliseconds(0);
-
   var result = {
     hours: [{
-      ts: new Date(three_days_before),
+      ts: new Date(days_before),
       value: 0,
       value_acc: 0
     }],
@@ -56,14 +57,14 @@ const accumulatedRain = (jwt, device_id, start_of_day, num_days) => new Promise(
   };
 
   var hours = dateTo.getHours();
-  if (dateTo.getHours() < start_of_day) {
-    hours += 72;
+  if (dateTo.getHours() < beginning_hour) {
+    hours += n_days_before_hourly * 24;
   } else {
-    hours += 48;
+    hours += (n_days_before_hourly - 1) * 24;
   }
 
-  var hour = three_days_before;
-  for (let i = hour.getHours() + 1; i <= hours; i++) {
+  var hour = new Date(days_before);
+  for (let i = days_before.getHours() + 1; i <= hours; i++) {
     hour.setHours(i % 24);
     let next_day = Math.floor(i / 24);
     var ts = new Date(hour);
@@ -75,7 +76,7 @@ const accumulatedRain = (jwt, device_id, start_of_day, num_days) => new Promise(
     });
   }
 
-  for (let i = 0; i < num_days - 1; i++) {
+  for (let i = 0; i < n_days_before_daily - 1; i++) {
     var day = new Date(dateFrom.setDate(dateFrom.getDate() + 1));
     result.days.push({
       ts: new Date(day),
@@ -89,15 +90,12 @@ const accumulatedRain = (jwt, device_id, start_of_day, num_days) => new Promise(
 
       for (let data of response.data) {
         let ts = new Date(data['ts']);
-        let today = hour.getDate();
 
-        if (ts.getDate() == today) {
-          for (let i = 0; i < result.hours.length; i++) {
-            if (ts.getHours() == result.hours[i].ts.getHours()) {
-              result.hours[i].value = Number(data['value']);
-              result.hours[i].value_acc = Number(data['value']);
-              break;
-            }
+        for (let i = 0; i < result.hours.length; i++) {
+          if (ts.getDate() == result.hours[i].ts.getDate() && ts.getHours() == result.hours[i].ts.getHours()) {
+            result.hours[i].value = Number(data['value']);
+            result.hours[i].value_acc = Number(data['value']);
+            break;
           }
         }
 
@@ -107,6 +105,8 @@ const accumulatedRain = (jwt, device_id, start_of_day, num_days) => new Promise(
             break;
           }
         }
+
+        hour.setHours(hour.getHours() + 1);
       }
 
       for (let i = 1; i < result.hours.length; i++) {
