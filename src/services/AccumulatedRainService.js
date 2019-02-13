@@ -25,23 +25,23 @@ const accumulatedRain = (dojot_host, jwt, device_id, beginning_hour, n_days_befo
   }
 
   var dateTo = new Date();
-  var dateFrom = new Date();
-  var days_before = new Date();
+  var date_before_daily = new Date();
+  var date_before_hourly = new Date();
 
-  dateFrom = initialize_date(dateFrom, beginning_hour, dateFrom.getDate() - n_days_before_daily, beginning_hour, 0, 0, 0);
-  days_before = initialize_date(days_before, beginning_hour, days_before.getDate() - n_days_before_hourly, beginning_hour, 0, 0, 0);
+  date_before_daily = initialize_date(date_before_daily, beginning_hour, date_before_daily.getDate() - n_days_before_daily, beginning_hour, 0, 0, 0);
+  date_before_hourly = initialize_date(date_before_hourly, beginning_hour, date_before_hourly.getDate() - n_days_before_hourly, beginning_hour, 0, 0, 0);
 
-  dateFromString = dateFrom.toISOString();
+  dateFromString = date_before_daily < date_before_hourly ? date_before_daily.toISOString() : date_before_hourly.toISOString();
   dateToString = dateTo.toISOString();
 
   var result = {
     hours: [{
-      ts: new Date(days_before),
+      ts: new Date(date_before_hourly),
       value: 0,
       value_acc: 0
     }],
     days: [{
-      ts: new Date(dateFrom),
+      ts: new Date(date_before_daily),
       value: 0
     }]
   };
@@ -53,8 +53,8 @@ const accumulatedRain = (dojot_host, jwt, device_id, beginning_hour, n_days_befo
     hours += (n_days_before_hourly - 1) * 24;
   }
 
-  var hour = new Date(days_before);
-  for (let i = days_before.getHours() + 1; i <= hours; i++) {
+  var hour = new Date(date_before_hourly);
+  for (let i = date_before_hourly.getHours() + 1; i <= hours; i++) {
     hour.setHours(i % 24);
     let next_day = Math.floor(i / 24);
     var ts = new Date(hour);
@@ -67,7 +67,7 @@ const accumulatedRain = (dojot_host, jwt, device_id, beginning_hour, n_days_befo
   }
 
   for (let i = 0; i < n_days_before_daily - 1; i++) {
-    var day = new Date(dateFrom.setDate(dateFrom.getDate() + 1));
+    var day = new Date(date_before_daily.setDate(date_before_daily.getDate() + 1));
     result.days.push({
       ts: new Date(day),
       value: 0
@@ -85,7 +85,7 @@ const accumulatedRain = (dojot_host, jwt, device_id, beginning_hour, n_days_befo
 
   axios({
     url,
-    method: "get",
+    method: 'get',
     headers: {
       Authorization: jwt
     }
@@ -124,7 +124,11 @@ const accumulatedRain = (dojot_host, jwt, device_id, beginning_hour, n_days_befo
         }
       }
 
-      console.log(result);
+      for (let i = 1; i < result.days.length; i++) {
+        result.days[i].value += result.days[i - 1].value;
+      }
+
+      // console.log(result);
       return resolve(result);
     })
     .catch(function (error) {
