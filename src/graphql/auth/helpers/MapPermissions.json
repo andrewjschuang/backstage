@@ -1,0 +1,110 @@
+{
+  "/auth/user/(.*)": {
+    "subject": "user",
+    "(.*)": {
+      "action": "modifier"
+    },
+    "GET": {
+      "action": "viewer"
+    }
+  },
+  "/ca/(.*)": {
+    "subject": "ca",
+    "GET": {
+      "action": "viewer"
+    }
+  },
+  "/sign/(.*)": {
+    "subject": "ca-sign",
+    "POST": {
+      "action": "viewer"
+    }
+  },
+  "/device/(.*)": {
+    "subject": "device",
+    "(.*)": {
+      "action": "modifier"
+    },
+    "GET": {
+      "action": "viewer"
+    }
+  },
+  "/export/(.*)": {
+    "subject": "export",
+    "(.*)": {
+      "action": "modifier"
+    },
+    "GET": {
+      "action": "viewer"
+    }
+  },
+  "/flows/(.*)": {
+    "subject": "flows",
+    "(.*)": {
+      "action": "modifier"
+    },
+    "GET": {
+      "action": "viewer"
+    }
+  },
+  "/history/(.*)": {
+    "subject": "history",
+    "(.*)": {
+      "action": "modifier"
+    },
+    "GET": {
+      "action": "viewer"
+    }
+  },
+  "/import/(.*)": {
+    "subject": "import",
+    "(.*)": {
+      "action": "modifier"
+    },
+    "GET": {
+      "action": "viewer"
+    }
+  },
+  "/metric/(.*)": {
+    "subject": "metric",
+    "(.*)": {
+      "action": "modifier"
+    },
+    "GET": {
+      "action": "viewer"
+    }
+  },
+  "/pap/(.*)": {
+    "subject": "permission",
+    "(.*)": {
+      "action": "modifier"
+    },
+    "GET": {
+      "action": "viewer"
+    }
+  },
+  "/stream/socketio/": {
+    "subject": "socketio",
+    "GET": {
+      "action": "viewer"
+    }
+  },
+  "/template/(.*)": {
+    "subject": "template",
+    "(.*)": {
+      "action": "modifier"
+    },
+    "GET": {
+      "action": "viewer"
+    }
+  },
+  "/fw-image/(.*)": {
+    "subject": "fw-image",
+    "(.*)": {
+      "action": "modifier"
+    },
+    "GET": {
+      "action": "viewer"
+    }
+  }
+}
